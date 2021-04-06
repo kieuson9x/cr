@@ -1,7 +1,5 @@
 <?php
 // require($URLROOT . "/bitrix/header.php");
-$URLROOT = "http://" . $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
-
 require_once $_SERVER['DOCUMENT_ROOT'] . "/config.php";
 require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
 ?>
@@ -71,17 +69,17 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                                             <td>Chỉ Tiêu</td>
                                             <td>Phòng ban</td>
                                             <?php for ($i = 1; $i <= 12; $i++) : ?>
-                                                <th data-editable="true"><?php echo "Tháng {$i}"; ?></th>
+                                                <th><?php echo "Tháng {$i}"; ?></th>
                                             <?php endfor ?>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?php foreach ($results as $result) : ?>
                                             <tr>
-                                                <td>
+                                                <td class="not-editable">
                                                     <?php echo data_get($result, '0.name') ?>
                                                 </td>
-                                                <td>
+                                                <td class="not-editable">
                                                     <?php
                                                     $i = array_search(data_get($result, '0.department_id'), array_column($departments, 'value'));
                                                     $element = ($i !== false ? $departments[$i] : null);
@@ -89,7 +87,16 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                                                     ?>
                                                 </td>
                                                 <?php for ($i = 1; $i <= 12; $i++) : ?>
-                                                    <td data-editable="true"><?php echo "Tháng {$i}"; ?></td>
+                                                    <td data-name="<?php echo $i ?>" data-dept-id="<?php echo data_get($result, '0.department_id') ?>" data-pk="<?php echo data_get($result, '0.target_id') ?>">
+                                                        <?php
+                                                        $key = array_search($i, array_column($result, 'month'));
+                                                        if ($key !== false) {
+                                                            echo data_get($result, "{$key}.amount", 0);
+                                                        } else {
+                                                            echo 0;
+                                                        }
+                                                        ?>
+                                                    </td>
                                                 <?php endfor ?>
                                             </tr>
                                         <?php endforeach ?>
@@ -199,13 +206,11 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
             $('#table_cr tbody tr td:not(.not-editable)').editable({
                 send: 'always',
                 type: 'text',
-                url: "<?php echo $URLROOT; ?>/employee-sales/update",
+                url: "<?php echo $URLROOT; ?>/ajax_update.php",
                 params: function(params) {
-                    var state = $(this).attr('data-state');
-                    var agencyId = $(this).attr('data-agency-id');
+                    var department_id = $(this).attr('data-dept-id');
                     params.year = 2021;
-                    params.state = state;
-                    params.agency_id = agencyId;
+                    params.department_id = department_id;
 
                     return params;
                 },
@@ -255,7 +260,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                             if (response.success) {
                                 toastr.success("Cập nhật thành công!");
                                 $("form[name=add_cr]").trigger("reset");
-                                // location.reload();
+                                location.reload();
                             } else {
                                 toastr.error("Cập nhật không thành công!");
                             }

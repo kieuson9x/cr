@@ -1,18 +1,21 @@
 <?php
-/////// Update your database login details here /////
-$dbhost_name = "10.0.32.24"; // Your host name
-$database = "sitemanager";       // Your database name
-$username = "bitrix0";            // Your login userid
-$password = "G{-QB!B=U]Zb41xHoT66";            // Your password
-//////// End of database details of your server //////
+/////// Cập nhật thông tin DB ở đây /////
+$dbhost_name = "10.0.32.24";
+$database = "sitemanager";
+$username = "bitrix0";
+$password = "G{-QB!B=U]Zb41xHoT66";
+//////// End //////
 
-// For development - Delete below code after dev stage
-/////// Update your database login details here /////
-$dbhost_name = "127.0.0.1"; // Your host name
-$database = "cr";       // Your database name
-$username = "root";            // Your login userid
-$password = "";            // Your password
-//////// End of database details of your server //////
+//
+/////// Cập nhật thông tin DB ở đây - Dev /////
+$dbhost_name = "127.0.0.1";
+$database = "cr";
+$username = "root";
+$password = "";
+//////// End //////
+
+$URLROOT = "http://cr.test"; // Link web
+$currentDepartmentName = "TCKT - IT"; // Tên phòng ban hiện tại đề tìm (check dòng 236)
 
 try {
   $db = new PDO('mysql:host=' . $dbhost_name . ';charset=utf8;dbname=' . $database, $username, $password);
@@ -230,6 +233,6 @@ $departments = [
   ['value' => 332, 'title' => 'NM_Quality Assurance'],
 ];
 
-$currentDepartment = array_values(array_filter($departments, function ($item) {
-  return $item['title'] === 'TCKT - IT';
+$currentDepartment = array_values(array_filter($departments, function ($item) use ($currentDepartmentName) {
+  return $item['title'] === $currentDepartmentName;
 }))[0] ?? [];

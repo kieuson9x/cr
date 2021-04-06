@@ -1,39 +1,61 @@
  <?php
-       $data = [];
+    require_once $_SERVER['DOCUMENT_ROOT'] . "/config.php";
+    $data = [];
 
-        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_SESSION['user_id'])) {
-            $data = [
-                'month' => (int) $this->data_get($_POST, 'name'),
-                'value' => (int) trim($this->data_get($_POST, 'value')),
-                'product_id' => (int) trim($this->data_get($_POST, 'pk')),
-                'year' => (int) trim($this->data_get($_POST, 'year')),
-                'state' => trim($this->data_get($_POST, 'state')),
-                'agency_id' => $this->data_get($_POST, 'agency_id')
-            ];
+    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        $data = [
+            'month' =>  $_POST["name"],
+            'department_id' => $_POST["department_id"],
+            'target_id' => $_POST["pk"],
+            'year' =>  $_POST["year"],
+            'amount' =>  $_POST["value"]
+        ];
 
-            if ($data['state'] === 'sale') {
-                $data['number_of_sale_goods'] = $data['value'];
-            }
+        findOrCreateTargetDepartment($db, $data['department_id'], $data['target_id'], $data['month'], $data['year'], $data['amount']);
 
-            // if ($data['state'] === 'inventory') {
-            //     $data['number_of_remaining_goods'] = $data['value'];
-            // }
+        echo json_encode(['success' => true]);
+    }
 
-            $agencySale = $this->employeeSaleModel->findAgencySale($data['agency_id'], $data['product_id'], $data['month'], $data['year']);
+    function findOrCreateTargetDepartment($db, $departmentId, $targetId, $month, $year, $amount)
+    {
+        // Tìm xem chỉ tiêu theo phòng ban và theo tháng đã có trước đó chưa
+        $stmt = $db->prepare("SELECT id
+                FROM `target_departments`
+                WHERE department_id = :department_id and
+                      target_id = :target_id and
+                      month = :month and
+                      year = :year
+                ORDER BY created_at DESC");
+        dbBind($stmt, ':department_id', $departmentId);
+        dbBind($stmt, ':target_id', $targetId);
+        dbBind($stmt, ':month', $month);
+        dbBind($stmt, ':year', $year);
 
-            if ($agencySale) {
-                $updateStatus = $this->employeeSaleModel->updateAgencySale($agencySale->id, $data);
-            } else {
-                $createStatus = $this->employeeSaleModel->createAgencySale($data['agency_id'], $data);
-            }
+        $stmt->execute();
+        $targetDepartment = $stmt->fetch(PDO::FETCH_OBJ);
 
-            $this->syncYear($data);
-            echo json_encode(['success' => true]);
-
-            // if ($this->employeeSaleModel->updateOrcreateEmployeeSale($data)) {
-            //     echo json_encode(['success' => true]);
-            // } else {
-            //     die("Something went wrong, please try again!");
-            // }
+        // Nếu k có chỉ tiêu trong DB => tạo mới
+        if (!$targetDepartment) {
+            $stmt = $db->prepare("INSERT INTO `target_departments` (department_id, target_id, month, year, amount)
+                              VALUES(:department_id, :target_id, :month, :year, :amount )");
+            dbBind($stmt, ':department_id', $departmentId);
+            dbBind($stmt, ':target_id', $targetId);
+            dbBind($stmt, ':month', $month);
+            dbBind($stmt, ':year', $year);
+            dbBind($stmt, ':amount', $amount);
+            $stmt->execute();
+            $targetDepartmentId = $db->lastInsertId();
+        } else {
+            // Nếu tồn tại, update đè lại
+            $targetDepartmentId = $targetDepartment->id;
+            $stmt = $db->prepare("UPDATE `target_departments`
+                            SET amount = :amount
+                            WHERE id = :id");
+            dbBind($stmt, ':id', $targetDepartmentId);
+            dbBind($stmt, ':amount', $amount);
+            $stmt->execute();
         }
-		?>
+
+        return $targetDepartmentId;
+    }
+    ?>

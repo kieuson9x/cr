@@ -76,7 +76,23 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                                         </tr>
                                     </thead>
                                     <tbody>
-
+                                        <?php foreach ($results as $result) : ?>
+                                            <tr>
+                                                <td>
+                                                    <?php echo data_get($result, '0.name') ?>
+                                                </td>
+                                                <td>
+                                                    <?php
+                                                    $i = array_search(data_get($result, '0.department_id'), array_column($departments, 'value'));
+                                                    $element = ($i !== false ? $departments[$i] : null);
+                                                    echo data_get($element, 'title');
+                                                    ?>
+                                                </td>
+                                                <?php for ($i = 1; $i <= 12; $i++) : ?>
+                                                    <td data-editable="true"><?php echo "Tháng {$i}"; ?></td>
+                                                <?php endfor ?>
+                                            </tr>
+                                        <?php endforeach ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -101,6 +117,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                             <input type="text" id="title" class="form-control" required name="title" data-live-search="true" style="width: 100%" />
                         </div>
 
+
                         <div class="form-group row">
                             <label>Năm</label>
                             <select id="year-selection_create" class="form-control" id="year" name="year" required>
@@ -114,6 +131,19 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                             <div class="invalid-feedback">
                                 Trường này bắt buộc nhập!
                             </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <label>Phòng ban</label>
+
+                            <select id="phongban" class="form-control" required name="department_id" data-live-search="true" style="width: 100%">
+                                <option value=''>Chọn 1 phòng ban</option>
+                                <?php foreach ($departments as $department) : ?>
+                                    <option value="<?php echo $department['value'] ?>">
+                                        <?php echo $department['title'] ?></option>
+                                <?php endforeach ?>
+
+                            </select>
                         </div>
 
                         <div class="form-group row">
@@ -131,7 +161,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
 
                         <div class="form-group row">
                             <label>Số chỉ tiêu</label>
-                            <input type="number" class="form-control" name="number_of_sale_goods" required>
+                            <input type="number" class="form-control" name="amount" required>
                         </div>
                     </div>
 
@@ -215,7 +245,7 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                 var data = form.serialize();
 
                 if (form[0].checkValidity()) {
-                    var link = window.location.origin + '/cr/ajax_create.php';
+                    var link = window.location.origin + '/ajax_create.php';
                     $.ajax({
                         url: link,
                         data: data,
@@ -225,9 +255,11 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
                             if (response.success) {
                                 toastr.success("Cập nhật thành công!");
                                 $("form[name=add_cr]").trigger("reset");
+                                // location.reload();
                             } else {
                                 toastr.error("Cập nhật không thành công!");
                             }
+
                         }
                     });
                 }
@@ -243,4 +275,5 @@ require_once $_SERVER['DOCUMENT_ROOT'] . "/ajax_index.php";
 </body>
 
 </html>
-<?php require($URLROOT . "/bitrix/footer.php"); ?>
+
+<!-- <?php require($URLROOT . "/bitrix/footer.php"); ?> -->

@@ -15,7 +15,7 @@ $password = "";            // Your password
 //////// End of database details of your server //////
 
 try {
-  $dbo = new PDO('mysql:host=' . $dbhost_name . ';dbname=' . $database, $username, $password);
+  $db = new PDO('mysql:host=' . $dbhost_name . ';charset=utf8;dbname=' . $database, $username, $password);
 } catch (PDOException $e) {
   print "Error!: " . $e->getMessage() . "<br/>";
   die();
@@ -52,6 +52,38 @@ function getParams()
     }
   }
 }
+
+function dbBind(&$stmt, $parameter, $value, $type = null)
+{
+  switch (is_null($type)) {
+    case is_int($value):
+      $type = PDO::PARAM_INT;
+      break;
+    case is_bool($value):
+      $type = PDO::PARAM_BOOL;
+      break;
+    case is_null($value):
+      $type = PDO::PARAM_NULL;
+      break;
+    default:
+      $type = PDO::PARAM_STR;
+  }
+
+  return $stmt->bindValue($parameter, $value, $type);
+}
+
+function data_get($data, $path, $default = null)
+{
+  $paths = explode('.', $path);
+
+  return array_reduce($paths, function ($o, $p) use ($default) {
+    if (isset($o->$p)) return (is_object($o->$p) ? (array) $o->$p : $o->$p) ?? $default;
+    if (isset($o[$p])) return (is_object($o[$p]) ? (array) $o[$p] : $o[$p])  ?? $default;
+
+    return $default;
+  }, (array) $data);
+}
+
 
 $departments = [
   ['value' => 46, 'title' => 'KANGAROO'],
